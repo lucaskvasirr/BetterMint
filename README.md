@@ -1,8 +1,8 @@
 <p align="center">
   <img width="600" src="https://i.ibb.co/6Pz1c3B/1-background.png">
   <br><br>
-  <a href="https://discord.gg/bettermint"><img alt="BetterMint Discord" src="https://img.shields.io/badge/Discord-BetterMint-0?style=flat&logo=discord"></a>
-  <a href="https://codeberg.org/BotSolver/BetterMint/releases/"><img alt="Download BetterMint" src="https://img.shields.io/github/downloads/BotSolvers/BetterMint/total?color=%2331c754&label=Downloads"></a>
+  <a href="https://discord.com/servers/bettermint-development-1098267851732815932"><img alt="BetterMint Discord" src="https://img.shields.io/badge/Discord-BetterMint-0?style=flat&logo=discord"></a>
+  <a href="https://github.com/BotSolvers/BetterMint/releases/"><img alt="Download BetterMint" src="https://img.shields.io/github/downloads/BotSolvers/BetterMint/total?color=%2331c754&label=Downloads"></a>
 </p>
 
 <h1 align="center">👑 BetterMint V2: Your Chess.com Companion! ♟️</h1>
@@ -15,7 +15,7 @@
 
 <h3 align="center">1. Download and Install</h3>
 <p align="center">
-  - <strong>Download the latest version of BetterMint V2</strong>: <a href="https://codeberg.org/BotSolver/BetterMint/releases/download/BetterMint/BetterMint.zip">BetterMint V2.zip</a>
+  - <strong>Download the latest version of BetterMint V2</strong>: <a href="https://github.com/BotSolvers/BetterMint/releases/download/BetterMint/BetterMint.zip">BetterMint V2.zip</a>
 </p>
 <p align="center">
   - <strong>Download and install Python 3.12.3</strong>: <a href="https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe">Python Installer</a>. Make sure to check the box that says "Add Python to PATH".

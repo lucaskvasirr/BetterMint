@@ -15,10 +15,13 @@
 
 <h3 align="center">1. Download and Install</h3>
 <p align="center">
-  - <strong>Download the latest version of BetterMint V2</strong>: <a href="https://github.com/BotSolvers/BetterMint/releases/download/BetterMint/BetterMint.zip">BetterMint V2.zip</a>
+  - <strong>Download the latest version of BetterMint V2</strong>: <a href="https://github.com/BotSolvers/BetterMint/releases/download/v2-multi/BetterMint.zip">BetterMint V2.zip</a>
 </p>
 <p align="center">
   - <strong>Download and install Python 3.12.3</strong>: <a href="https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe">Python Installer</a>. Make sure to check the box that says "Add Python to PATH".
+</p>
+<p align="center">
+  - <strong>Download and install Git</strong>: <a href="https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.exe">Git Installer</a>. Make sure you do this.
 </p>
 <p align="center">
   - <strong>Extract the downloaded BetterMint V2.zip file</strong> to a directory of your choice.

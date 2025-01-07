@@ -2,7 +2,7 @@
   <img width="600" src="https://i.ibb.co/6Pz1c3B/1-background.png">
   <br><br>
   <a href="https://discord.gg/bettermint"><img alt="BetterMint Discord" src="https://img.shields.io/badge/Discord-BetterMint-0?style=flat&logo=discord"></a>
-  <a href="https://codeberg.org/BotSolver/BetterMint/releases/"><img alt="Download BetterMint" src="https://img.shields.io/badge/Codeberg-Downloads-total?color=%2331c754&label=Download&logo=googlechrome&logoColor=%23ffffff"></a>
+  <a href="https://codeberg.org/BotSolver/BetterMint/releases/"><img alt="Download BetterMint" src="https://img.shields.io/github/downloads/BotSolvers/BetterMint/total?color=%2331c754&label=Downloads"></a>
 </p>
 
 <h1 align="center">👑 BetterMint V2: Your Chess.com Companion! ♟️</h1>

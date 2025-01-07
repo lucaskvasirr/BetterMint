@@ -42,6 +42,11 @@
 </p>
 
 <h3 align="center">3. Configure the Engine</h3>
+
+<p align="center">
+  - <strong>Refer to ProtonDevs Github Repo on our websockets api's that are Public and Free to use and make your own!</strong>: Navigate to <a href="https://github.com/ProtonDev-sys/bettermint-sockets">BetterMint Websockets Repo</a>.
+</p>
+
 <p align="center">
   - <strong>Open the Configuration Page</strong>: Navigate to <a href="http://localhost:8000/">http://localhost:8000/</a> in your browser.
 </p>

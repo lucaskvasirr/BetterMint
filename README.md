@@ -14,6 +14,11 @@
 <p align="center">Follow these steps to unlock the magic of BetterMint V2:</p>
 
 <h3 align="center">1. Download and Install</h3>
+
+<p align="center">
+  - <strong>We are on the Chrome Webstore again!</strong>: <a href="https://chromewebstore.google.com/detail/mint-v2/hjpjlhjhmbnpokpgdhpncefmchlonmhj?authuser=0&hl=en">Mint V2.</a>
+</p>
+
 <p align="center">
   - <strong>Download the latest version of BetterMint V2</strong>: <a href="https://github.com/BotSolvers/BetterMint/releases/download/v2-multi/BetterMint.zip">BetterMint V2.zip</a>
 </p>

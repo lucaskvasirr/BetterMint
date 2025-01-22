@@ -85,7 +85,7 @@
   - <a href="https://github.com/sakiodre">thedemons</a> - Original Creator<br>
   - <a href="https://github.com/webcubed">Webcubed</a> - Development<br>
   - <a href="https://github.com/hotamago">HotaVN</a> - Development and Improvements<br>
-  - <a href="https://github.com/BotSolvers">BetterMint</a> - Own Development and Maintenance
+  - <a href="https://github.com/BotSolvers">BetterMint</a> - Own Development and Maintenance<br>
   - <a href="https://github.com/lucaskvasirr">lucaskvasirr</a> - Premove Code Snippet
 </p>
 

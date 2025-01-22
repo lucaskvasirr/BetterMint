@@ -86,6 +86,7 @@
   - <a href="https://github.com/webcubed">Webcubed</a> - Development<br>
   - <a href="https://github.com/hotamago">HotaVN</a> - Development and Improvements<br>
   - <a href="https://github.com/BotSolvers">BetterMint</a> - Own Development and Maintenance
+  - <a href="https://github.com/lucaskvasirr">lucaskvasirr</a> - Premove Code Snippet
 </p>
 
 <p align="center">Remember, BetterMint V2 is a tool to enhance your learning and enjoyment of chess. Embrace the journey to mastery through practice and dedication!</p>

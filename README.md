@@ -86,6 +86,7 @@
   - <a href="https://github.com/webcubed">Webcubed</a> - Development<br>
   - <a href="https://github.com/hotamago">HotaVN</a> - Development and Improvements<br>
   - <a href="https://github.com/BotSolvers">BetterMint</a> - Own Development and Maintenance<br>
+  - <a href="https://github.com/ProtonDev-sys">ProtonDev</a> - API Docs & Public API Host<br>
   - <a href="https://github.com/lucaskvasirr">lucaskvasirr</a> - Premove Code Snippet
 </p>
 

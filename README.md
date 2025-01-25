@@ -78,6 +78,8 @@
   BetterMint is now able to use multiple engines at the same time, what a wonder.
 </p>
 
+<h2 align="center">🧙‍♂️ We also have an old friends project GMCheems currently up! you can see it in the BetterCheems Folder!</h2>
+
 <h2 align="center">📜 Credits</h2>
 
 <p align="center">This project is a collaborative effort made possible by the contributions of:</p>
@@ -87,6 +89,7 @@
   - <a href="https://github.com/hotamago">HotaVN</a> - Development and Improvements<br>
   - <a href="https://github.com/BotSolvers">BetterMint</a> - Own Development and Maintenance<br>
   - <a href="https://github.com/ProtonDev-sys">ProtonDev</a> - API Docs & Public API Host<br>
+    - <a href="https://github.com/gmcheems">GMCheems</a> - Made GMCheems
   - <a href="https://github.com/lucaskvasirr">lucaskvasirr</a> - Premove Code Snippet
 </p>
 

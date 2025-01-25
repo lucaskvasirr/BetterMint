@@ -209,6 +209,11 @@ class GameController {
       }
     });
   }
+  ResetGame() {
+    this.UpdateEngine(true);
+    BetterMintmaster.engine.moveCounter = 0; // Resetar contador
+    BetterMintmaster.game.RefreshEvalutionBar();
+  }
   UpdateExtensionOptions() {
     if (getValueConfig(enumOptions.EvaluationBar) && this.evalBar == null)
       this.CreateAnalysisTools();
@@ -459,16 +464,19 @@ class StockfishEngine {
     this.ready = false;
     this.isEvaluating = false;
     this.isRequestedStop = false;
-    this.isGameStarted = false; // New state to track if a game has started
+    this.isGameStarted = false;
     this.readyCallbacks = [];
     this.goDoneCallbacks = [];
     this.topMoves = [];
     this.lastTopMoves = [];
     this.isInTheory = false;
     this.lastMoveScore = null;
+    this.moveCounter = 0;
+    this.maxAutoMoves = 5;
+    this.isPreMoveSequence = false;
+    this.hasShownLimitMessage = false;
     this.depth = getValueConfig(enumOptions.Depth);
     this.options = {
-      // "Move Overhead": "",
       "Slow Mover": "10",
       "MultiPV": getValueConfig(enumOptions.MultiPV),
     };
@@ -635,6 +643,13 @@ stopEvaluation(callback) {
   }
 
   UpdatePosition(FENs = null, isNewGame = true) {
+    // Only reset counter if it's actually a new game starting from initial position
+    if (isNewGame && FENs && FENs.startsWith("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq")) {
+      this.moveCounter = 0;
+      this.hasShownLimitMessage = false; // Reset the limit message flag for new games
+      console.log("Resetting move counter - new game from initial position");
+    }
+    
     this.onReady(() => {
       this.stopEvaluation(() => {
         this.MoveAndGo(FENs, isNewGame);
@@ -645,6 +660,8 @@ stopEvaluation(callback) {
   restartGame() {
     this.stopEvaluation(() => {
       this.isGameStarted = false;
+      this.moveCounter = 0;
+      this.isPreMoveSequence = false;
       this.send("ucinewgame");
       this.isGameStarted = true;
       this.go();
@@ -875,19 +892,16 @@ stopEvaluation(callback) {
             (object) => object.move === move.move
         );
         if (isBestMove) {
-            // Basically, engine just finished evaluation
-            bestMoveSelected = true; // A best move has been selected
+            bestMoveSelected = true;
             if (index === -1) {
                 this.topMoves.push(move);
                 this.SortTopMoves();
             }
         } else {
             if (index === -1) {
-                // If move not found, just push it to topMoves
                 this.topMoves.push(move);
                 this.SortTopMoves();
             } else {
-                // If move found, compare depths and update if necessary
                 if (move.depth >= this.topMoves[index].depth) {
                     this.topMoves[index] = move;
                     this.SortTopMoves();
@@ -895,42 +909,114 @@ stopEvaluation(callback) {
             }
         }
     }
+
     if (bestMoveSelected && this.topMoves.length > 0) {
       const bestMove = this.topMoves[0];
-      if (bestMove.mate !== null && bestMove.mate > 0 && bestMove.mate <= 3) {
-          const legalMoves = this.BetterMintmaster.game.controller.getLegalMoves();
-          const moveData = legalMoves.find(
-              (move) => move.from === bestMove.from && move.to === bestMove.to
-          );
-  
-          if (moveData) {
-              moveData.userGenerated = true;
-  
-              if (bestMove.promotion !== null) {
-                  moveData.promotion = bestMove.promotion;
-              }
-  
-              if (window.toaster) {
-                  window.toaster.add({
-                      id: "premove-mate",
-                      duration: 2000,
-                      icon: "circle-checkmark",
-                      content: `BetterMint: Mate in ${bestMove.mate} move(s)! Executing premove...`,
-                      style: {
-                          position: "fixed",
-                          bottom: "120px",
-                          right: "30px",
-                          backgroundColor: "#1baca6",
-                          color: "white",
-                          fontWeight: "bold",
-                      },
-                  });
-              }
-  
-              this.BetterMintmaster.game.controller.move(moveData);
-          }
+      const currentFEN = this.BetterMintmaster.game.controller.getFEN();
+      const isInitialPosition = currentFEN.startsWith("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq");
+      
+      // Start pre-moves from initial position
+      if (isInitialPosition && this.moveCounter === 0) {
+        console.log("Starting pre-move sequence from initial position");
+        this.isPreMoveSequence = true;
       }
-  }  
+      
+      // Execute pre-moves if we haven't reached the limit and haven't shown limit message
+      if (this.moveCounter < this.maxAutoMoves && !this.hasShownLimitMessage) {
+        const legalMoves = this.BetterMintmaster.game.controller.getLegalMoves();
+        const moveData = legalMoves.find(
+          move => move.from === bestMove.from && move.to === bestMove.to
+        );
+  
+        if (moveData) {
+          moveData.userGenerated = true;
+  
+          if (bestMove.promotion !== null) {
+            moveData.promotion = bestMove.promotion;
+          }
+  
+          this.moveCounter++;
+  
+          let auto_move_time = getValueConfig(enumOptions.AutoMoveTime) || 100;
+          
+          setTimeout(() => {
+            this.BetterMintmaster.game.controller.move(moveData);
+            
+            if (window.toaster) {
+              window.toaster.add({
+                id: "auto-move-counter",
+                duration: 2000,
+                icon: "circle-info",
+                content: `Pre-move ${this.moveCounter}/${this.maxAutoMoves} executed!`,
+                style: {
+                  position: "fixed",
+                  bottom: "120px",
+                  right: "30px",
+                  backgroundColor: "#2ecc71",
+                  color: "white"
+                }
+              });
+            }
+
+            // Show limit message when reaching max moves
+            if (this.moveCounter >= this.maxAutoMoves) {
+              if (window.toaster) {
+                window.toaster.add({
+                  id: "auto-move-limit",
+                  duration: 3000,
+                  icon: "circle-checkmark", 
+                  content: "Maximum of 5 pre-moves reached!",
+                  style: {
+                    position: "fixed",
+                    bottom: "120px",
+                    right: "30px",
+                    backgroundColor: "#e67e22",
+                    color: "white"
+                  }
+                });
+              }
+              this.hasShownLimitMessage = true; // Mark that we've shown the limit message
+            }
+          }, auto_move_time);
+        }
+      }
+
+      // Check for mate in 3 or less
+      if (bestMove.mate !== null && bestMove.mate > 0 && bestMove.mate <= 3) {
+        const legalMoves = this.BetterMintmaster.game.controller.getLegalMoves();
+        const moveData = legalMoves.find(
+          move => move.from === bestMove.from && move.to === bestMove.to
+        );
+
+        if (moveData) {
+          moveData.userGenerated = true;
+
+          if (bestMove.promotion !== null) {
+            moveData.promotion = bestMove.promotion;
+          }
+
+          if (window.toaster) {
+            window.toaster.add({
+              id: "premove-mate",
+              duration: 2000,
+              icon: "circle-checkmark",
+              content: `BetterMint: Mate in ${bestMove.mate} move(s)! Executing premove...`,
+              style: {
+                position: "fixed",
+                bottom: "120px",
+                right: "30px",
+                backgroundColor: "#1baca6",
+                color: "white",
+                fontWeight: "bold",
+              },
+            });
+          }
+
+          this.BetterMintmaster.game.controller.move(moveData);
+        }
+      }
+    }
+
     if (getValueConfig(enumOptions.TextToSpeech)) {
       const topMove = this.topMoves[0]; // Select the top move from the PV list
       const msg = new SpeechSynthesisUtterance(topMove.move); // Use topMove.move for the spoken text

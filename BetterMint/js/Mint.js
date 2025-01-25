@@ -164,29 +164,37 @@ class GameController {
     let self = this;
     this.controller.on("Move", (event) => {
       console.log("On Move", event.data);
+      
+      // [FIX] Trigger pre-moves after white's first move
+      const currentFEN = this.controller.getFEN();
+      if (currentFEN.startsWith("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")) {
+        if (BetterMintmaster.engine.moveCounter === 0 && currentFEN.endsWith("w KQkq")) {
+          BetterMintmaster.engine.isPreMoveSequence = true;
+          console.log("WHITE'S FIRST MOVE - INITIATING PRE-MOVES");
+        }
+      }
+      
       this.UpdateEngine(false);
     });
     // check if a new game has started
     if (this.evalBar == null && getValueConfig(enumOptions.EvaluationBar)) {
       this.CreateAnalysisTools();
     }
-        // check if a new game has started
-        this.controller.on('ModeChanged', (event) => {
-          if (event.data === "playing") {
-              // at this point, the fen notation isn't updated yet, we should delay this
-              setTimeout(() => {
-                  this.ResetGame();
-                  BetterMintmaster.game.RefreshEvalutionBar();
-              }, 100)
-          }
-      });
+    this.controller.on('ModeChanged', (event) => {
+      if (event.data === "playing") {
+        this.ResetGame();
+        BetterMintmaster.game.RefreshEvalutionBar();
+        BetterMintmaster.engine.moveCounter = 0;
+        BetterMintmaster.engine.hasShownLimitMessage = false;
+        BetterMintmaster.engine.isPreMoveSequence = true;
+      }
+    });
     let checkEventOne = false;
     this.controller.on("RendererSet", (event) => {
-        setTimeout(() => {
-            this.ResetGame();
-            this.RefreshEvalutionBar();
-            checkEventOne = true;
-        }, 1000);
+      // Execute immediately without setTimeout
+      this.ResetGame();
+      this.RefreshEvalutionBar();
+      checkEventOne = true;
     });
     setTimeout(() => {
         if(!checkEventOne){
@@ -208,11 +216,6 @@ class GameController {
         else this.evalBar.classList.remove("evaluation-bar-flipped");
       }
     });
-  }
-  ResetGame() {
-    this.UpdateEngine(true);
-    BetterMintmaster.engine.moveCounter = 0; // Resetar contador
-    BetterMintmaster.game.RefreshEvalutionBar();
   }
   UpdateExtensionOptions() {
     if (getValueConfig(enumOptions.EvaluationBar) && this.evalBar == null)
@@ -452,6 +455,10 @@ class GameController {
     this.evalScore.classList.add(classSideAdd);
     this.evalScoreAbbreviated.classList.add(classSideAdd);
   }
+  getPlayingAs() {
+    // Return 2 if player chose black
+    return this.options.isPlayerBlack ? 2 : 1;
+  }
 }
 
 class StockfishEngine {
@@ -464,19 +471,20 @@ class StockfishEngine {
     this.ready = false;
     this.isEvaluating = false;
     this.isRequestedStop = false;
-    this.isGameStarted = false;
+    this.isGameStarted = false; // New state to track if a game has started
     this.readyCallbacks = [];
     this.goDoneCallbacks = [];
     this.topMoves = [];
     this.lastTopMoves = [];
-    this.isInTheory = false;
-    this.lastMoveScore = null;
     this.moveCounter = 0;
     this.maxAutoMoves = 5;
     this.isPreMoveSequence = false;
     this.hasShownLimitMessage = false;
+    this.isInTheory = false;
+    this.lastMoveScore = null;
     this.depth = getValueConfig(enumOptions.Depth);
     this.options = {
+      // "Move Overhead": "",
       "Slow Mover": "10",
       "MultiPV": getValueConfig(enumOptions.MultiPV),
     };
@@ -568,6 +576,8 @@ class StockfishEngine {
   go() {
     this.onReady(() => {
       this.stopEvaluation(() => {
+        // Prevent overlapping evaluations
+        if (this.isEvaluating) return;
         console.assert(!this.isEvaluating, "Duplicated Stockfish go command");
         this.isEvaluating = true;
         this.send(`go depth ${this.depth}`);
@@ -578,7 +588,7 @@ class StockfishEngine {
   handleDisconnect() {
     this.ready = false;
     this.loaded = false;
-    this.isEvaluating = false;
+    this.isEvaluating = false; // Reset evaluation state
     this.attemptReconnect();
   }
 
@@ -604,27 +614,29 @@ class StockfishEngine {
     }
   }
 
-stopEvaluation(callback) {
-  if (this.isEvaluating) {
-    if (!this.stopInFlight) {
-      this.stopInFlight = true;
-      this.goDoneCallbacks = [callback];
-      this.isRequestedStop = true;
-
-      this.send("stop");
-
-      this.send("ucinewgame");
-
-      this.stopInFlight = false;
-      this.goDoneCallbacks.forEach(cb => cb());
-      this.goDoneCallbacks = [];
+  stopEvaluation(callback) {
+    if (this.isEvaluating) {
+      if (!this.stopInFlight) {
+        this.stopInFlight = true;
+        // Wrap callback to reset state
+        this.goDoneCallbacks = [() => {
+          this.isEvaluating = false; // Explicitly set to false
+          this.isRequestedStop = false;
+          callback();
+        }];
+        this.isRequestedStop = true;
+        this.send("stop");
+        this.send("ucinewgame");
+        this.stopInFlight = false;
+        this.goDoneCallbacks.forEach(cb => cb());
+        this.goDoneCallbacks = [];
+      } else {
+        this.goDoneCallbacks.push(callback);
+      }
     } else {
-      this.goDoneCallbacks.push(callback);
+      callback();
     }
-  } else {
-    callback();
   }
-}
   
   onStockfishResponse() {
     if (this.isRequestedStop) {
@@ -643,15 +655,14 @@ stopEvaluation(callback) {
   }
 
   UpdatePosition(FENs = null, isNewGame = true) {
-    // Only reset counter if it's actually a new game starting from initial position
-    if (isNewGame && FENs && FENs.startsWith("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq")) {
-      this.moveCounter = 0;
-      this.hasShownLimitMessage = false; // Reset the limit message flag for new games
-      console.log("Resetting move counter - new game from initial position");
-    }
-    
     this.onReady(() => {
       this.stopEvaluation(() => {
+        if (isNewGame) {
+          this.moveCounter = 0;
+          this.hasShownLimitMessage = false;
+          this.isPreMoveSequence = true;
+          console.log("NEW GAME - COUNTERS RESET");
+        }
         this.MoveAndGo(FENs, isNewGame);
       });
     });
@@ -669,7 +680,8 @@ stopEvaluation(callback) {
   }
 
   UpdateExtensionOptions(options) {
-    if (options === null) options = this.options;
+    // Handle both null/undefined cases
+    if (options == null) options = this.options;
     Object.keys(options).forEach((key) => {
       this.send(`setoption name ${key} value ${options[key]}`);
     });
@@ -892,16 +904,19 @@ stopEvaluation(callback) {
             (object) => object.move === move.move
         );
         if (isBestMove) {
-            bestMoveSelected = true;
+            // Basically, engine just finished evaluation
+            bestMoveSelected = true; // A best move has been selected
             if (index === -1) {
                 this.topMoves.push(move);
                 this.SortTopMoves();
             }
         } else {
             if (index === -1) {
+                // If move not found, just push it to topMoves
                 this.topMoves.push(move);
                 this.SortTopMoves();
             } else {
+                // If move found, compare depths and update if necessary
                 if (move.depth >= this.topMoves[index].depth) {
                     this.topMoves[index] = move;
                     this.SortTopMoves();
@@ -909,38 +924,53 @@ stopEvaluation(callback) {
             }
         }
     }
-
     if (bestMoveSelected && this.topMoves.length > 0) {
       const bestMove = this.topMoves[0];
       const currentFEN = this.BetterMintmaster.game.controller.getFEN();
-      const isInitialPosition = currentFEN.startsWith("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq");
-      
-      // Start pre-moves from initial position
-      if (isInitialPosition && this.moveCounter === 0) {
-        console.log("Starting pre-move sequence from initial position");
-        this.isPreMoveSequence = true;
-      }
-      
-      // Execute pre-moves if we haven't reached the limit and haven't shown limit message
-      if (this.moveCounter < this.maxAutoMoves && !this.hasShownLimitMessage) {
+      const currentTurn = currentFEN.split(" ")[1]; // 'w' or 'b'
+      const playingAs = this.BetterMintmaster.game.controller.getPlayingAs();
+
+      // Debug logs for color/turn detection
+      //console.log("DEBUG COLOR/TURN:", {
+      //  playingAs,
+      //  currentTurn,
+      //  isPlayerBlack: this.BetterMintmaster.options.isPlayerBlack,
+      //  moveCounter: this.moveCounter,
+      //  maxAutoMoves: this.maxAutoMoves
+      //});
+
+      // [FIX] Execute pre-moves if:
+      // - It's player's turn AND
+      // - Haven't reached move limit
+      if (
+        ((playingAs === 1 && currentTurn === 'w') || 
+         (playingAs === 2 && currentTurn === 'b')) &&
+        this.moveCounter < this.maxAutoMoves &&
+        !this.hasShownLimitMessage
+      ) {
+        // console.log("EXECUTING PRE-MOVE FOR:", playingAs === 1 ? "WHITE" : "BLACK");
+        
         const legalMoves = this.BetterMintmaster.game.controller.getLegalMoves();
         const moveData = legalMoves.find(
           move => move.from === bestMove.from && move.to === bestMove.to
         );
-  
+
         if (moveData) {
           moveData.userGenerated = true;
-  
+
           if (bestMove.promotion !== null) {
             moveData.promotion = bestMove.promotion;
           }
-  
+
           this.moveCounter++;
-  
-          let auto_move_time = getValueConfig(enumOptions.AutoMoveTime) || 100;
-          
+
+          // Set instant execution
+          let auto_move_time = 0;
+
+          // console.time("pre-move-execution");
           setTimeout(() => {
             this.BetterMintmaster.game.controller.move(moveData);
+            // console.timeEnd("pre-move-execution");
             
             if (window.toaster) {
               window.toaster.add({
@@ -958,14 +988,13 @@ stopEvaluation(callback) {
               });
             }
 
-            // Show limit message when reaching max moves
             if (this.moveCounter >= this.maxAutoMoves) {
               if (window.toaster) {
                 window.toaster.add({
                   id: "auto-move-limit",
-                  duration: 3000,
-                  icon: "circle-checkmark", 
-                  content: "Maximum of 5 pre-moves reached!",
+                  duration: 2000, // Reduced from 3000
+                  icon: "circle-checkmark",
+                  content: "Maximum pre-moves reached!",
                   style: {
                     position: "fixed",
                     bottom: "120px",
@@ -975,10 +1004,12 @@ stopEvaluation(callback) {
                   }
                 });
               }
-              this.hasShownLimitMessage = true; // Mark that we've shown the limit message
+              this.hasShownLimitMessage = true;
             }
-          }, auto_move_time);
+          }, auto_move_time); // Execute immediately with 0ms delay
         }
+      } else {
+        // console.log("WAITING FOR CORRECT TURN OR MOVE LIMIT REACHED");
       }
 
       // Check for mate in 3 or less
@@ -1016,7 +1047,6 @@ stopEvaluation(callback) {
         }
       }
     }
-
     if (getValueConfig(enumOptions.TextToSpeech)) {
       const topMove = this.topMoves[0]; // Select the top move from the PV list
       const msg = new SpeechSynthesisUtterance(topMove.move); // Use topMove.move for the spoken text
@@ -1257,8 +1287,8 @@ class BetterMint {
       (event) => {
         this.options = event.detail;
         this.game.UpdateExtensionOptions();
-        // this.engine = new StockfishEngine(this);
-        this.engine.UpdateExtensionOptions();
+        // Pass the updated options explicitly
+        this.engine.UpdateExtensionOptions(this.options);
 
         // show a notification when the settings is updated, but only if the previous
         // notification has gone
@@ -1288,6 +1318,11 @@ class BetterMint {
         content: `BetterMint V2 is enabled!`,
       });
     }
+  }
+  resetPreMoveCounter() {
+    this.engine.moveCounter = 0;
+    this.engine.hasShownLimitMessage = false;
+    this.engine.isPreMoveSequence = true;
   }
 }
 
